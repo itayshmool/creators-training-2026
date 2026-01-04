@@ -67,7 +67,7 @@ All game state lives in memory. No database required for MVP.
 #### Reusable Methods (NEVER modify these):
 
 | Method | Signature | Purpose |
-|--------|-----------|---------|
+|--------|-----------|---------|  
 | `createRoom(hostInfo)` | `(PlayerInfo) => GameRoom` | Creates new room with 6-char code |
 | `getRoom(gameCode)` | `(string) => GameRoom \| null` | Retrieves room by code |
 | `joinRoom(gameCode, playerInfo)` | `(string, PlayerInfo) => GameRoom` | Adds player (max 4) |
@@ -131,7 +131,7 @@ setTimeout(() => {
 #### Platform Events (100% Reusable)
 
 | Event | Direction | Payload | Purpose |
-|-------|-----------|---------|---------|
+|-------|-----------|---------|---------|  
 | `connection` | Client → Server | `socket` | New socket connected |
 | `join_room_socket` | Client → Server | `{ gameCode, playerId }` | Join room via WebSocket |
 | `leave_room` | Client → Server | `{ gameCode, playerId }` | Explicit leave |
@@ -145,7 +145,7 @@ setTimeout(() => {
 #### Game-Specific Events (Defined in game/BACKEND.md)
 
 | Event | Direction | Purpose |
-|-------|-----------|---------|
+|-------|-----------|---------|  
 | `start_game` | Client → Server | Host starts game |
 | `game_state_update` | Server → Client | Sync game state |
 | *Custom events* | Both | Game-specific actions |
