@@ -60,6 +60,31 @@ fi
 print_success "macOS $os_version detected"
 echo ""
 
+# Check for admin privileges (required for Homebrew and other installations)
+print_step "Checking for administrator privileges..."
+
+# Check if user is in admin group
+current_user=$(whoami)
+if groups "$current_user" | grep -qE '\badmin\b'; then
+    print_success "User '$current_user' has administrator privileges"
+else
+    print_error "Administrator privileges required!"
+    echo ""
+    echo "Your user account ($current_user) is not an administrator on this Mac."
+    echo "This is required to install Homebrew and other development tools."
+    echo ""
+    echo "To fix this, ask an administrator to:"
+    echo "  1. Open System Settings (or System Preferences)"
+    echo "  2. Go to Users & Groups"
+    echo "  3. Click on your user account ($current_user)"
+    echo "  4. Enable 'Allow user to administer this computer'"
+    echo ""
+    echo "After getting admin access, please run this script again."
+    echo ""
+    exit 1
+fi
+echo ""
+
 # Install Xcode Command Line Tools
 print_step "Checking for Xcode Command Line Tools..."
 if xcode-select -p &> /dev/null; then
@@ -86,7 +111,9 @@ if command -v brew &> /dev/null; then
     print_success "Homebrew already installed ($(brew --version | head -n 1))"
 else
     print_warning "Homebrew not found. Installing..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    
+    # Set NONINTERACTIVE to avoid TTY issues when script is piped
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     
     # Add Homebrew to PATH for Apple Silicon Macs
     if [[ $(uname -m) == 'arm64' ]]; then
