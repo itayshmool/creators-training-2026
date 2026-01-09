@@ -18,8 +18,9 @@ BOOK="📚"
 WARNING="⚠️"
 PARTY="🎉"
 
-# Template repository path
-TEMPLATE_REPO="$HOME/creators-training-2026"
+# Template repository path (dynamically detected)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_REPO="$(dirname "$SCRIPT_DIR")"
 
 # Functions
 print_header() {

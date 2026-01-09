@@ -6,15 +6,19 @@
 
 These scripts are like automated assistants that do all the boring setup work for you. Instead of typing 20+ commands, you just run one script and it handles everything!
 
+> **💡 Note About Paths**: In this guide, we use `/path/to/creators-training-2026` as a placeholder. Replace it with wherever you actually cloned the repository. For example: `~/creators-training-2026`, `~/dev/creators-training-2026`, or `/Users/yourname/projects/creators-training-2026`.
+
 ## 🎯 Quick Start
 
 ### Step 1: Install the Scripts (One Time Only)
 
 1. **Open Terminal** (or Command Prompt on Windows)
 
-2. **Navigate to the scripts folder**:
+2. **Navigate to the scripts folder** (wherever you cloned the repository):
    ```bash
-   cd ~/creators-training-2026/scripts
+   cd /path/to/creators-training-2026/scripts
+   # Example: cd ~/creators-training-2026/scripts
+   # Or: cd ~/dev/creators-training-2026/scripts
    ```
 
 3. **Run the installer**:
@@ -366,7 +370,7 @@ chmod +x setup-new-project.sh
 ### "Command not found"
 ```bash
 # Make sure you ran the installer
-cd ~/creators-training-2026/scripts
+cd /path/to/creators-training-2026/scripts  # wherever you cloned it
 ./install-scripts.sh
 
 # Then restart your terminal
@@ -401,7 +405,7 @@ cd ~/creators-training-2026/scripts
 
 4. **Keep scripts updated**
    ```bash
-   cd ~/creators-training-2026
+   cd /path/to/creators-training-2026  # wherever you cloned it
    git pull  # Get latest version
    cd scripts
    ./install-scripts.sh  # Reinstall

@@ -20,6 +20,10 @@ BULB="💡"
 # Issues found
 ISSUES_FOUND=0
 
+# Template repository path (dynamically detected)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_REPO="$(dirname "$SCRIPT_DIR")"
+
 print_header() {
     echo ""
     echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -150,10 +154,10 @@ check_cursor_rules() {
         print_issue "Missing cursor rules: ${missing_rules[*]}" "These rules help Cursor AI understand your project standards"
         
         echo -e "${CYAN}${BULB} Tip: Copy them from the template repository${NC}"
-        echo -e "  ${BLUE}~/creators-training-2026/templates/cursorrules/${NC}"
+        echo -e "  ${BLUE}$TEMPLATE_REPO/templates/cursorrules/${NC}"
         
         if ask_fix; then
-            TEMPLATE_DIR="$HOME/creators-training-2026/templates/cursorrules"
+            TEMPLATE_DIR="$TEMPLATE_REPO/templates/cursorrules"
             
             if [ -d "$TEMPLATE_DIR" ]; then
                 for rule in "${missing_rules[@]}"; do
@@ -165,8 +169,9 @@ check_cursor_rules() {
                 print_fix "Cursor rules added"
             else
                 echo -e "${RED}Template directory not found at $TEMPLATE_DIR${NC}"
-                echo -e "${CYAN}Clone it with:${NC}"
-                echo -e "  ${BLUE}git clone https://github.com/itayshmool/creators-training-2026.git ~/creators-training-2026${NC}"
+                echo -e "${CYAN}Clone the repository with:${NC}"
+                echo -e "  ${BLUE}git clone https://github.com/itayshmool/creators-training-2026.git${NC}"
+                echo -e "${CYAN}(Run this script from the cloned repository's scripts/ folder)${NC}"
             fi
         fi
     else
