@@ -1,0 +1,581 @@
+# Performance Optimization & Best Practices
+
+## Performance Budget
+
+### Frontend
+
+| Metric | Target | Maximum |
+|--------|--------|---------|
+| First Contentful Paint (FCP) | < 1.8s | 3s |
+| Largest Contentful Paint (LCP) | < 2.5s | 4s |
+| Time to Interactive (TTI) | < 3.8s | 7.3s |
+| Total Blocking Time (TBT) | < 200ms | 600ms |
+| Cumulative Layout Shift (CLS) | < 0.1 | 0.25 |
+| JavaScript bundle size | < 200KB | 300KB |
+| CSS bundle size | < 50KB | 100KB |
+
+### Backend
+
+| Metric | Target | Maximum |
+|--------|--------|---------|
+| API response time (p95) | < 200ms | 500ms |
+| API response time (p99) | < 500ms | 1000ms |
+| Database query time | < 50ms | 200ms |
+| Time to first byte (TTFB) | < 200ms | 600ms |
+
+## Frontend Performance
+
+### 1. Code Splitting & Lazy Loading
+
+```typescript
+// Route-based code splitting
+import { lazy, Suspense } from 'react';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Settings = lazy(() => import('./pages/Settings'));
+
+function App() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+// Component-level lazy loading
+const HeavyComponent = lazy(() => import('./HeavyComponent'));
+
+function MyPage() {
+  const [showHeavy, setShowHeavy] = useState(false);
+  
+  return (
+    <div>
+      <button onClick={() => setShowHeavy(true)}>Load Heavy</button>
+      {showHeavy && (
+        <Suspense fallback={<div>Loading...</div>}>
+          <HeavyComponent />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+```
+
+### 2. Bundle Size Optimization
+
+```json
+// package.json - Bundle size monitoring
+{
+  "scripts": {
+    "build": "vite build",
+    "analyze": "vite-bundle-visualizer"
+  },
+  "bundlesize": [
+    {
+      "path": "./dist/assets/*.js",
+      "maxSize": "200 KB"
+    },
+    {
+      "path": "./dist/assets/*.css",
+      "maxSize": "50 KB"
+    }
+  ]
+}
+```
+
+```typescript
+// vite.config.ts - Optimize build
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['react', 'react-dom'],
+          'ui': ['@mui/material', '@emotion/react'],
+        }
+      }
+    },
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.logs in production
+      }
+    }
+  }
+});
+```
+
+### 3. Image Optimization
+
+```typescript
+// Use modern formats
+<picture>
+  <source srcSet="image.avif" type="image/avif" />
+  <source srcSet="image.webp" type="image/webp" />
+  <img 
+    src="image.jpg" 
+    alt="Description"
+    loading="lazy"
+    width="800"
+    height="600"
+  />
+</picture>
+
+// Responsive images
+<img
+  srcSet="
+    image-400w.jpg 400w,
+    image-800w.jpg 800w,
+    image-1200w.jpg 1200w
+  "
+  sizes="(max-width: 600px) 400px, (max-width: 1200px) 800px, 1200px"
+  src="image-800w.jpg"
+  alt="Description"
+  loading="lazy"
+/>
+```
+
+### 4. React Performance
+
+```typescript
+// Use React.memo for expensive components
+const ExpensiveComponent = React.memo(({ data }) => {
+  return <div>{/* Expensive render */}</div>;
+});
+
+// Use useMemo for expensive calculations
+function MyComponent({ items }) {
+  const sortedItems = useMemo(() => {
+    return items.sort((a, b) => a.value - b.value);
+  }, [items]); // Only recalculate when items change
+  
+  return <div>{sortedItems.map(item => <Item key={item.id} {...item} />)}</div>;
+}
+
+// Use useCallback for functions passed as props
+function Parent() {
+  const [count, setCount] = useState(0);
+  
+  const handleClick = useCallback(() => {
+    setCount(c => c + 1);
+  }, []); // Stable reference
+  
+  return <Child onClick={handleClick} />;
+}
+
+// Virtualize long lists
+import { FixedSizeList } from 'react-window';
+
+function LongList({ items }) {
+  return (
+    <FixedSizeList
+      height={600}
+      itemCount={items.length}
+      itemSize={50}
+      width="100%"
+    >
+      {({ index, style }) => (
+        <div style={style}>
+          {items[index].name}
+        </div>
+      )}
+    </FixedSizeList>
+  );
+}
+```
+
+### 5. Debounce & Throttle
+
+```typescript
+import { debounce, throttle } from 'lodash';
+
+// Debounce: Wait for user to stop typing
+const debouncedSearch = debounce((query: string) => {
+  api.search(query);
+}, 300);
+
+function SearchInput() {
+  const handleChange = (e) => {
+    debouncedSearch(e.target.value);
+  };
+  
+  return <input onChange={handleChange} />;
+}
+
+// Throttle: Limit scroll events
+const throttledScroll = throttle(() => {
+  console.log('Scroll event');
+}, 100);
+
+window.addEventListener('scroll', throttledScroll);
+```
+
+## Backend Performance
+
+### 1. Database Query Optimization
+
+```typescript
+// ❌ BAD: N+1 query problem
+const users = await db.users.findAll();
+for (const user of users) {
+  user.posts = await db.posts.findAll({ where: { userId: user.id } });
+}
+
+// ✅ GOOD: Use joins or eager loading
+const users = await db.users.findAll({
+  include: [{ model: db.posts }]
+});
+
+// ✅ GOOD: Prisma with relations
+const users = await prisma.user.findMany({
+  include: {
+    posts: true
+  }
+});
+```
+
+```sql
+-- Add indexes for frequently queried columns
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_posts_user_id ON posts(user_id);
+CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
+
+-- Composite index for common query patterns
+CREATE INDEX idx_posts_user_created ON posts(user_id, created_at DESC);
+```
+
+### 2. Caching Strategy
+
+```typescript
+import Redis from 'ioredis';
+const redis = new Redis(process.env.REDIS_URL);
+
+// Cache-aside pattern
+async function getUser(userId: string): Promise<User> {
+  // 1. Try cache first
+  const cacheKey = `user:${userId}`;
+  const cached = await redis.get(cacheKey);
+  
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  
+  // 2. Fetch from database
+  const user = await db.users.findById(userId);
+  
+  // 3. Cache for 5 minutes
+  await redis.setex(cacheKey, 300, JSON.stringify(user));
+  
+  return user;
+}
+
+// Invalidate cache on update
+async function updateUser(userId: string, data: Partial<User>) {
+  const user = await db.users.update(userId, data);
+  
+  // Invalidate cache
+  await redis.del(`user:${userId}`);
+  
+  return user;
+}
+
+// Cache expensive queries
+async function getPopularPosts() {
+  const cacheKey = 'posts:popular';
+  const cached = await redis.get(cacheKey);
+  
+  if (cached) return JSON.parse(cached);
+  
+  const posts = await db.posts.findAll({
+    where: { likes: { gt: 100 } },
+    orderBy: { likes: 'desc' },
+    take: 10
+  });
+  
+  // Cache for 1 hour
+  await redis.setex(cacheKey, 3600, JSON.stringify(posts));
+  
+  return posts;
+}
+```
+
+### 3. Connection Pooling
+
+```typescript
+// Database connection pool
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: 5432,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  max: 20, // Maximum number of connections
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000
+});
+
+// Redis connection pool
+const redis = new Redis({
+  host: process.env.REDIS_HOST,
+  port: 6379,
+  maxRetriesPerRequest: 3,
+  enableReadyCheck: true,
+  retryStrategy: (times) => {
+    return Math.min(times * 50, 2000);
+  }
+});
+```
+
+### 4. Response Compression
+
+```typescript
+import compression from 'compression';
+
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6 // Compression level (0-9, higher = more compression but slower)
+}));
+```
+
+### 5. Rate Limiting & Load Balancing
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+// Prevent abuse
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Max 100 requests per window
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use('/api/', limiter);
+
+// Heavy endpoint? Lower limit
+const heavyLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10 // Max 10 requests per hour
+});
+
+app.get('/api/reports/generate', heavyLimiter, generateReportHandler);
+```
+
+### 6. Background Jobs
+
+```typescript
+import { Queue, Worker } from 'bullmq';
+
+// Create queue
+const emailQueue = new Queue('emails', {
+  connection: redis
+});
+
+// Add jobs (don't block API response)
+app.post('/api/users', async (req, res) => {
+  const user = await createUser(req.body);
+  
+  // Add email job (async)
+  await emailQueue.add('welcome-email', {
+    userId: user.id,
+    email: user.email
+  });
+  
+  res.json({ success: true, user });
+});
+
+// Process jobs in background
+const worker = new Worker('emails', async (job) => {
+  const { userId, email } = job.data;
+  await sendWelcomeEmail(email);
+}, { connection: redis });
+```
+
+### 7. Pagination
+
+```typescript
+// Offset pagination (simple but slow for large offsets)
+app.get('/api/posts', async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
+  
+  const posts = await db.posts.findMany({
+    skip: offset,
+    take: limit,
+    orderBy: { createdAt: 'desc' }
+  });
+  
+  res.json({ posts, page, limit });
+});
+
+// Cursor pagination (better for large datasets)
+app.get('/api/posts', async (req, res) => {
+  const cursor = req.query.cursor;
+  const limit = 20;
+  
+  const posts = await db.posts.findMany({
+    take: limit + 1, // Fetch one extra to check if there's more
+    ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+    orderBy: { createdAt: 'desc' }
+  });
+  
+  const hasMore = posts.length > limit;
+  const results = hasMore ? posts.slice(0, -1) : posts;
+  const nextCursor = hasMore ? results[results.length - 1].id : null;
+  
+  res.json({ posts: results, nextCursor, hasMore });
+});
+```
+
+## Monitoring & Profiling
+
+### 1. Response Time Monitoring
+
+```typescript
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    
+    // Log slow requests
+    if (duration > 500) {
+      logger.warn('Slow request', {
+        method: req.method,
+        path: req.path,
+        duration,
+        query: req.query
+      });
+    }
+    
+    // Track metrics
+    metrics.recordResponseTime(req.path, duration);
+  });
+  
+  next();
+});
+```
+
+### 2. Memory Monitoring
+
+```typescript
+setInterval(() => {
+  const usage = process.memoryUsage();
+  
+  logger.info('Memory usage', {
+    rss: `${Math.round(usage.rss / 1024 / 1024)} MB`,
+    heapTotal: `${Math.round(usage.heapTotal / 1024 / 1024)} MB`,
+    heapUsed: `${Math.round(usage.heapUsed / 1024 / 1024)} MB`,
+    external: `${Math.round(usage.external / 1024 / 1024)} MB`
+  });
+  
+  // Alert if heap usage > 80%
+  if (usage.heapUsed / usage.heapTotal > 0.8) {
+    logger.error('High memory usage detected');
+  }
+}, 60000); // Every minute
+```
+
+### 3. Lighthouse CI
+
+```yaml
+# .github/workflows/lighthouse.yml
+name: Lighthouse CI
+
+on: [push]
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v8
+        with:
+          urls: |
+            https://example.com
+          budgetPath: ./budget.json
+          uploadArtifacts: true
+```
+
+```json
+// budget.json
+{
+  "budgets": [{
+    "path": "/*",
+    "timings": [
+      { "metric": "first-contentful-paint", "budget": 2000 },
+      { "metric": "largest-contentful-paint", "budget": 2500 },
+      { "metric": "interactive", "budget": 3800 }
+    ],
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 300 },
+      { "resourceType": "stylesheet", "budget": 100 },
+      { "resourceType": "image", "budget": 500 }
+    ]
+  }]
+}
+```
+
+## Performance Checklist
+
+### Frontend
+- [ ] Code splitting enabled
+- [ ] Lazy loading for routes
+- [ ] Images optimized (WebP, AVIF)
+- [ ] Images lazy-loaded
+- [ ] Bundle size < 200KB
+- [ ] React.memo for expensive components
+- [ ] useMemo/useCallback where needed
+- [ ] Virtual scrolling for long lists
+- [ ] Debounce/throttle user inputs
+
+### Backend
+- [ ] Database queries optimized
+- [ ] Indexes on frequently queried columns
+- [ ] Caching strategy implemented
+- [ ] Connection pooling configured
+- [ ] Response compression enabled
+- [ ] Pagination on list endpoints
+- [ ] Background jobs for slow operations
+- [ ] Rate limiting configured
+
+### Monitoring
+- [ ] Response time monitoring
+- [ ] Memory monitoring
+- [ ] Error tracking (Sentry, etc.)
+- [ ] Performance budget set
+- [ ] Lighthouse CI configured
+- [ ] Alerting on performance degradation
+
+## Remember
+
+> **"Premature optimization is the root of all evil."** - Donald Knuth
+
+> **"Make it work, make it right, make it fast."** - Kent Beck
+
+---
+
+**Set budgets early. Measure continuously. Optimize strategically.**
+
