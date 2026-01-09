@@ -51,7 +51,11 @@ These scripts are like automated assistants that do all the boring setup work fo
 
 **How to use:**
 ```bash
-setup-new-project.sh my-awesome-app
+setup-new-project.sh <project-name> <location>
+
+# Examples:
+setup-new-project.sh my-awesome-app ~/dev
+setup-new-project.sh client-project ~/projects
 ```
 
 **What you'll see:**
@@ -63,6 +67,11 @@ setup-new-project.sh my-awesome-app
 ║    with TDD & AI Assistance                              ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
+
+Usage: setup-new-project.sh <project-name> <location>
+Example: setup-new-project.sh my-app ~/dev
+
+✅ Will create project in: ~/dev/my-awesome-app
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Checking Prerequisites
@@ -85,6 +94,7 @@ setup-new-project.sh my-awesome-app
 ...
 
 🎉 Setup Complete!
+📁 Project Location: ~/dev/my-awesome-app
 ```
 
 **Color meanings:**
@@ -280,11 +290,11 @@ Review the issues above and fix them for best results.
 ### Scenario 1: Starting a Brand New Project
 
 ```bash
-# 1. Create the project
-setup-new-project.sh my-new-app
+# 1. Create the project (specify name AND location)
+setup-new-project.sh my-new-app ~/dev
 
 # 2. Go into the project
-cd my-new-app
+cd ~/dev/my-new-app
 
 # 3. Open in your code editor
 cursor .  # or: code .
@@ -391,10 +401,10 @@ cd /path/to/creators-training-2026/scripts  # wherever you cloned it
 
 ## 💡 Pro Tips
 
-1. **Always run from the project directory** (except `setup-new-project.sh`)
+1. **Always run from the project directory** (except `setup-new-project.sh` which takes a location parameter)
    ```bash
-   cd my-project  # Go to your project first
-   verify-project.sh  # Then run the script
+   cd ~/dev/my-project  # Go to your project first
+   verify-project.sh    # Then run the script
    ```
 
 2. **Read the output!** The scripts tell you what they're doing and what you need to do

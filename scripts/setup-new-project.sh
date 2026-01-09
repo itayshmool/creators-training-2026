@@ -542,7 +542,7 @@ print_summary() {
     echo -e "${GREEN}Your project '$PROJECT_NAME' is ready!${NC}"
     echo ""
     echo -e "${CYAN}📁 Project Location:${NC}"
-    echo -e "   $(pwd)"
+    echo -e "   ${BLUE}$PROJECT_LOCATION/$PROJECT_NAME${NC}"
     echo ""
     echo -e "${CYAN}🎯 What's Included:${NC}"
     echo -e "   ${CHECK} Test-Driven Development enforced"
@@ -552,7 +552,7 @@ print_summary() {
     echo -e "   ${CHECK} Full documentation in docs/"
     echo ""
     echo -e "${CYAN}🚀 Next Steps:${NC}"
-    echo -e "   1. ${BLUE}cd $PROJECT_NAME${NC}"
+    echo -e "   1. ${BLUE}cd $PROJECT_LOCATION/$PROJECT_NAME${NC}"
     echo -e "   2. ${BLUE}cursor .${NC}  ${YELLOW}(or open in your IDE)${NC}"
     echo -e "   3. ${BLUE}Start coding!${NC}"
     echo ""
@@ -591,6 +591,10 @@ main() {
 EOF
     echo -e "${NC}"
     
+    echo -e "${CYAN}Usage: ${BLUE}setup-new-project.sh <project-name> <location>${NC}"
+    echo -e "${CYAN}Example: ${BLUE}setup-new-project.sh my-app ~/dev${NC}"
+    echo ""
+    
     # Get project name
     if [ -z "$1" ]; then
         echo -e "${CYAN}Enter project name:${NC} "
@@ -603,6 +607,38 @@ EOF
     else
         PROJECT_NAME=$1
     fi
+    
+    # Get location
+    if [ -z "$2" ]; then
+        echo -e "${CYAN}Enter location (e.g., ~/dev, ~/projects):${NC} "
+        read -r PROJECT_LOCATION
+        
+        if [ -z "$PROJECT_LOCATION" ]; then
+            print_error "Location cannot be empty"
+            exit 1
+        fi
+    else
+        PROJECT_LOCATION=$2
+    fi
+    
+    # Expand ~ to full path
+    PROJECT_LOCATION="${PROJECT_LOCATION/#\~/$HOME}"
+    
+    # Validate location exists
+    if [ ! -d "$PROJECT_LOCATION" ]; then
+        print_error "Location does not exist: $PROJECT_LOCATION"
+        echo -e "${CYAN}Create it first with: ${BLUE}mkdir -p $PROJECT_LOCATION${NC}"
+        exit 1
+    fi
+    
+    # Move to location before creating project
+    cd "$PROJECT_LOCATION" || {
+        print_error "Cannot access location: $PROJECT_LOCATION"
+        exit 1
+    }
+    
+    echo -e "${GREEN}${CHECK} Will create project in: ${BLUE}$PROJECT_LOCATION/$PROJECT_NAME${NC}"
+    echo ""
     
     # Run setup steps
     check_prerequisites
